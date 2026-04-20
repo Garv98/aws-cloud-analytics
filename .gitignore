@@ -1,0 +1,49 @@
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# AWS SAM
+.aws-sam/
+samconfig.toml.bak
+samconfig.toml
+
+# Environment files
+.env
+.env.*
+
+# Frontend config (with actual API keys)
+frontend/config.js
+!frontend/config.example.js
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+*.zip
+dist/
+build/
+
+# Exclude irrelevant markdown files
+!README.md
+!QUICK_START.md
+!docs/DEPLOYMENT.md
+!docs/API_SPEC.md
+!docs/TROUBLESHOOTING.md
+!docs/NEXT_STEPS.md
+# Exclude all other markdown files except the above
+*.md
+
+backend/functions/process_upload/lambda_package/

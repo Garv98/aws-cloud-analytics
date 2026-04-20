@@ -1,0 +1,294 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AI-Powered Data Insights App (serverless MVP)
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 256
+    Tracing: Active
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref JobsTable
+        UPLOAD_BUCKET: !Ref UploadBucket
+        REPORT_BUCKET: !Ref ReportBucket
+
+Resources:
+  InsightsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: jobId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: jobId
+          KeyType: HASH
+
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  ReportBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CreateJobFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/create_job/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub arn:${AWS::Partition}:s3:::${UploadBucket}/*
+      Events:
+        CreateJobPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref InsightsApi
+            Path: /jobs
+            Method: post
+
+  GetJobFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/get_job/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref JobsTable
+      Events:
+        GetJob:
+          Type: Api
+          Properties:
+            RestApiId: !Ref InsightsApi
+            Path: /jobs/{jobId}
+            Method: get
+
+  GetResultFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/get_result/
+      Handler: lambda_function.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref JobsTable
+        - S3ReadPolicy:
+            BucketName: !Ref ReportBucket
+      Events:
+        GetResult:
+          Type: Api
+          Properties:
+            RestApiId: !Ref InsightsApi
+            Path: /jobs/{jobId}/result
+            Method: get
+
+  ProcessUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/process_upload/
+      Handler: lambda_function.lambda_handler
+      Timeout: 120
+      MemorySize: 512
+      Environment:
+        Variables:
+          ENABLE_BEDROCK: "true"
+          BEDROCK_MODEL_ID: amazon.titan-text-express-v1
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: !Sub ${UploadBucket.Arn}/*
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub ${ReportBucket.Arn}/*
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+
+  ProcessUploadFunctionUploadCreatedPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ProcessUploadFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt UploadBucket.Arn
+
+  ChatQueryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/chat_query/
+      Handler: lambda_function.lambda_handler
+      Timeout: 60
+      MemorySize: 512
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref JobsTable
+          REPORT_BUCKET: !Ref ReportBucket
+          ENABLE_BEDROCK: "true"
+          BEDROCK_MODEL_ID: amazon.titan-text-express-v1
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref JobsTable
+        - S3ReadPolicy:
+            BucketName: !Ref ReportBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+      Events:
+        ChatQueryPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref InsightsApi
+            Path: /chat/{jobId}
+            Method: post
+
+  BucketNotificationConfiguration:
+    Type: Custom::S3BucketNotification
+    Properties:
+      ServiceToken: !GetAtt BucketNotificationFunction.Arn
+      BucketName: !Ref UploadBucket
+      NotificationConfiguration:
+        LambdaFunctionConfigurations:
+          - Id: ProcessCsvFiles
+            Events: ['s3:ObjectCreated:*']
+            LambdaFunctionArn: !GetAtt ProcessUploadFunction.Arn
+            Filter:
+              Key:
+                FilterRules:
+                  - Name: prefix
+                    Value: uploads/
+                  - Name: suffix
+                    Value: .csv
+          - Id: ProcessXlsxFiles
+            Events: ['s3:ObjectCreated:*']
+            LambdaFunctionArn: !GetAtt ProcessUploadFunction.Arn
+            Filter:
+              Key:
+                FilterRules:
+                  - Name: prefix
+                    Value: uploads/
+                  - Name: suffix
+                    Value: .xlsx
+          - Id: ProcessXlsFiles
+            Events: ['s3:ObjectCreated:*']
+            LambdaFunctionArn: !GetAtt ProcessUploadFunction.Arn
+            Filter:
+              Key:
+                FilterRules:
+                  - Name: prefix
+                    Value: uploads/
+                  - Name: suffix
+                    Value: .xls
+
+  BucketNotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.12
+      Role: !GetAtt BucketNotificationFunctionRole.Arn
+      Timeout: 30
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import cfnresponse
+          
+          s3 = boto3.client('s3')
+          
+          def handler(event, context):
+              try:
+                  bucket = event['ResourceProperties']['BucketName']
+                  notification_config = event['ResourceProperties']['NotificationConfiguration']
+                  
+                  if event['RequestType'] == 'Delete':
+                      s3.put_bucket_notification_configuration(
+                          Bucket=bucket,
+                          NotificationConfiguration={}
+                      )
+                  else:
+                      s3.put_bucket_notification_configuration(
+                          Bucket=bucket,
+                          NotificationConfiguration=notification_config
+                      )
+                  
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              except Exception as e:
+                  print(f"Error: {e}")
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+  BucketNotificationFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3BucketNotificationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutBucketNotification
+                  - s3:GetBucketNotification
+                Resource: !GetAtt UploadBucket.Arn
+
+Outputs:
+  ApiUrl:
+    Description: Invoke URL for the API stage
+    Value: !Sub https://${InsightsApi}.execute-api.${AWS::Region}.amazonaws.com/prod
+
+  UploadBucketName:
+    Description: Bucket for CSV uploads
+    Value: !Ref UploadBucket
+
+  ReportBucketName:
+    Description: Bucket for JSON results
+    Value: !Ref ReportBucket
+
+  JobsTableName:
+    Description: DynamoDB table storing job state
+    Value: !Ref JobsTable

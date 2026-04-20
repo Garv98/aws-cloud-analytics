@@ -1,0 +1,89 @@
+I’m creating a concrete execution plan for your AI-Powered Data Insights App, and first I’ll quickly inspect current memory/workspace context so the plan is grounded and saved cleanly.
+
+Read [](file:///c%3A/Users/garva/OneDrive/Desktop/AWSCloud)
+
+Read memory
+
+I’ve confirmed the workspace and memory are empty; next I’ll run a quick Explore pass to identify practical architecture choices, likely blockers, and a 2-day execution shape for a beginner on AWS Free Tier.
+
+2-day AWS app planning
+
+I now have discovery findings and I’m drafting a single execution plan tailored to a 2-day rookie-friendly build, then I’ll persist it to session memory so we can refine it later if needed.
+
+Read memory
+
+I’m now writing the full 2-day execution plan into session memory so it stays editable for follow-up refinements and handoff.
+
+Created memory file [](file:///c%3A/Users/garva/AppData/Roaming/Code/User/workspaceStorage/4fae0dbb47dcbd48c749c52f80137e24/GitHub.copilot-chat/memory-tool/memories/OTgxYTc4YjItNTFjNy00MTFmLTkyMjktMGEwYmRmMTcxODg5/plan.md)
+
+I’ve saved the plan; I’ll quickly verify the stored version and then present the same scannable plan here for your review.
+
+Read memory [](file:///c%3A/Users/garva/AppData/Roaming/Code/User/workspaceStorage/4fae0dbb47dcbd48c749c52f80137e24/GitHub.copilot-chat/memory-tool/memories/OTgxYTc4YjItNTFjNy00MTFmLTkyMjktMGEwYmRmMTcxODg5/plan.md)
+
+## Plan: AI-Powered Data Insights App in 2 Days
+
+Build a serverless app where users upload CSV data, AWS performs analysis in cloud compute, and users receive both numeric insights and AI-generated summary text. This plan is optimized for a beginner, Free Tier safety, and a strong course demo.
+
+**Steps**
+1. Phase 0 - Free Tier setup and cost protection (must happen first)  
+Create AWS account from the Free Tier page, enable MFA on root, create one IAM admin user for daily work, and stop using root for development. In Billing, create budget alerts at USD 1, USD 5, and USD 10, and enable a billing alarm in CloudWatch.
+
+2. Phase 1 - Lock MVP scope (depends on 1)  
+Freeze scope to five outcomes only: CSV upload, cloud processing, AI summary, result retrieval, and dashboard display. Define one fixed CSV schema (for example: date, category, amount). Prepare three test files: valid, missing fields, malformed format.
+
+3. Phase 2 - Provision core AWS resources (depends on 1, parallel subtasks possible)  
+Create private S3 upload bucket, private S3 results bucket, DynamoDB table for job state, and CloudWatch log groups. In parallel, create least-privilege Lambda role permissions for S3 read/write, DynamoDB read/write, and CloudWatch logs.
+
+4. Phase 3 - API and async workflow design (depends on 2)  
+Use API Gateway + Lambda with async job pattern:
+- POST /jobs creates job and returns presigned upload URL.
+- GET /jobs/{jobId} returns status.
+- GET /jobs/{jobId}/result returns final insights.
+Track state in DynamoDB: CREATED, UPLOADED, PROCESSING, COMPLETED, FAILED.
+
+5. Phase 4 - Cloud analysis engine (depends on 3)  
+Trigger analysis Lambda from S3 upload event. Parse CSV, compute core stats (count, min, max, average, top categories, trend buckets), store result JSON in S3, and update DynamoDB status. Add strict validation and meaningful failure messages.
+
+6. Phase 5 - AI summary layer with guaranteed fallback (depends on 4)  
+Primary path: call Amazon Bedrock to generate natural-language insights from computed stats.  
+Fallback path: if Bedrock access is delayed/unavailable, generate deterministic template-based insights so the demo remains fully functional.
+
+7. Phase 6 - Frontend and hosting (depends on 3, fully integrated after 5)  
+Build simple UI with upload form, status polling, and insights panel. Host frontend on S3 and serve through CloudFront. Frontend flow: create job, upload CSV to presigned URL, poll status, display insights or error.
+
+8. Phase 7 - Security, observability, and reliability hardening (depends on 5 and 6)  
+Enable structured logging in Lambda, set one CloudWatch error alarm, confirm API CORS setup, enforce bucket private access, and ensure downloads/results are API-mediated (no public raw data exposure).
+
+9. Phase 8 - End-to-end verification (depends on 7)  
+Run three complete tests (valid, missing fields, malformed). Validate API behavior, status transitions, S3 outputs, and CloudWatch logs. Capture one successful and one failed trace for presentation evidence.
+
+10. Phase 9 - Submission packaging (depends on 8)  
+Prepare architecture diagram, service-role mapping, API sheet, cost summary, and 2-3 minute demo recording proving cloud-side computation through Lambda invocation logs and result generation pipeline.
+
+11. 2-day execution schedule  
+Day 1 morning: Phases 0-3  
+Day 1 afternoon: Phase 4  
+Day 1 evening: start Phase 6  
+Day 2 morning: Phase 5 + complete Phase 6  
+Day 2 afternoon: Phases 7-8  
+Day 2 evening: Phase 9 demo package
+
+**Relevant files**
+- Greenfield workspace: no existing source files need modification.
+- Create a fresh project structure for frontend, backend, infrastructure notes, and documentation under workspace root during implementation.
+
+**Verification**
+1. POST /jobs returns jobId and upload URL.
+2. GET /jobs/{jobId} transitions correctly to COMPLETED or FAILED.
+3. GET /jobs/{jobId}/result returns structured JSON insights.
+4. CloudWatch shows Lambda invocations tied to uploaded files.
+5. DynamoDB contains one record per job with timestamps and final status.
+6. Budget alarms are active and no unintended paid services are running.
+
+**Decisions**
+- Included scope: serverless upload-analyze-report pipeline with optional Bedrock enhancement.
+- Excluded for 2-day delivery: authentication, CI/CD automation, multi-tenant roles, advanced BI dashboards.
+- Chosen architecture: asynchronous workflow for better reliability and professional presentation.
+- Risk strategy: mandatory AI fallback to avoid demo failure due model access or quota issues.
+
+Plan has been saved in session memory and is ready to refine if you want a Day 1 checklist next.

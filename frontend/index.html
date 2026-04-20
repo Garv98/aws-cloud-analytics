@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="World-class AI-powered data analytics platform. Upload any Excel or CSV file and get instant insights with beautiful visualizations." />
+    <title>Nimbus Insights | World-Class Data Analytics</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Background Effects -->
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
+    
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-content">
+        <div class="logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <path d="M16 4L4 10V22L16 28L28 22V10L16 4Z" stroke="url(#logo-gradient)" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="16" cy="16" r="4" fill="url(#logo-gradient)"/>
+            <defs>
+              <linearGradient id="logo-gradient" x1="4" y1="4" x2="28" y2="28">
+                <stop offset="0%" stop-color="#6366f1"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span class="logo-text">Nimbus Insights</span>
+        </div>
+        <div class="nav-links">
+          <span class="version-badge">v2.0 Pro</span>
+          <span class="badge">AWS Cloud</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-wrapper">
+      <main class="container">
+        <!-- Hero Section -->
+        <header class="hero">
+          <div class="hero-badge">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 3L10 7L14 7.5L11 10.5L11.5 14.5L8 12.5L4.5 14.5L5 10.5L2 7.5L6 7L8 3Z"/>
+            </svg>
+            World-Class Data Analytics
+          </div>
+          <h1 class="hero-title">
+            Transform Any Data into
+            <span class="gradient-text">Powerful Insights</span>
+          </h1>
+          <p class="hero-subtitle">
+            Upload CSV, XLSX, or XLS files and get instant statistical analysis, 
+            correlation detection, and beautiful visualizations. Powered by AWS Lambda.
+          </p>
+          <div class="feature-badges">
+            <span class="feature-badge">CSV</span>
+            <span class="feature-badge">XLSX</span>
+            <span class="feature-badge">XLS</span>
+            <span class="feature-badge">Auto-Detection</span>
+            <span class="feature-badge">Charts</span>
+          </div>
+        </header>
+
+        <!-- Upload Section -->
+        <section class="upload-section">
+          <div class="card upload-card">
+            <div class="card-header">
+              <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                Upload Your Data
+              </h2>
+              <p class="card-subtitle">Supports CSV, XLSX, and XLS files up to 10MB</p>
+            </div>
+            
+            <form id="upload-form" class="upload-form">
+              <div id="drop-zone" class="drop-zone">
+                <input id="csv-file" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required hidden />
+                
+                <div class="drop-zone-content">
+                  <svg class="upload-icon" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  <div class="drop-zone-text">
+                    <p class="drop-zone-title">Drag & drop your data file here</p>
+                    <p class="drop-zone-subtitle">or <button type="button" id="browse-btn" class="browse-link">browse files</button></p>
+                    <p class="drop-zone-formats">CSV • XLSX • XLS</p>
+                  </div>
+                  <div id="file-preview" class="file-preview hidden">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span id="file-name"></span>
+                    <span id="file-type" class="file-type-badge"></span>
+                    <button type="button" id="remove-file" class="remove-btn">&times;</button>
+                  </div>
+                </div>
+              </div>
+
+              <button id="run-btn" type="submit" class="btn-primary" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Analyze Data
+              </button>
+            </form>
+
+            <div id="upload-feedback" class="feedback-message"></div>
+            
+            <!-- Progress Bar -->
+            <div id="progress-container" class="progress-container hidden">
+              <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+              </div>
+              <p id="progress-text" class="progress-text"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Status Section -->
+        <section id="status-section" class="status-section hidden">
+          <div class="card status-card">
+            <div class="card-header">
+              <h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Job Status
+              </h3>
+            </div>
+            <div class="status-content">
+              <div id="status-pill" class="status-badge status-waiting">
+                <span class="status-dot"></span>
+                WAITING
+              </div>
+              <p id="status-text" class="status-description">No active job yet</p>
+              <div id="job-id" class="job-id"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Results Section (Dynamically Populated) -->
+        <section id="results-section" class="results-section hidden">
+          <!-- Content will be dynamically generated by app.js -->
+        </section>
+
+      </main>
+
+      <!-- Chatbot Sidebar -->
+      <aside id="chat-sidebar" class="chat-sidebar">
+        <!-- Content will be dynamically generated by app.js -->
+      </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Powered by AWS Lambda, S3, DynamoDB, and API Gateway | Built for World-Class Analytics</p>
+    </footer>
+
+    <script src="config.js?v=2"></script>
+    <script src="app.js?v=2"></script>
+  </body>
+</html>
