@@ -45,5 +45,6 @@ build/
 !docs/NEXT_STEPS.md
 # Exclude all other markdown files except the above
 *.md
+!docs/*.md
 
 backend/functions/process_upload/lambda_package/
